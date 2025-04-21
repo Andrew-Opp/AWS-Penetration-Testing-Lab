@@ -130,7 +130,32 @@ exit
 echo "flag{you_pivoted_correctly}" | sudo tee /root/super_secret_flag.txt
 
 # Setup Cowrie Honeypot
-... (steps abbreviated for brevity)
+sudo apt install -y git python3 python3-pip python3-virtualenv libssl-dev libffi-dev build-essential libpython3-dev authbind
+sudo adduser --disabled-password --gecos "" cowrie
+sudo su - cowrie
+git clone https://github.com/cowrie/cowrie.git
+cd cowrie
+virtualenv cowrie-env
+source cowrie-env/bin/activate
+pip install -r requirements.txt
+cp etc/cowrie.cfg.dist etc/cowrie.cfg
+nano etc/cowrie.cfg
+# [honeypot] hostname = ip-10-0-3-129
+
+# Authbind for low-port
+sudo touch /etc/authbind/byport/22
+sudo chown cowrie:cowrie /etc/authbind/byport/22
+sudo chmod 755 /etc/authbind/byport/22
+
+# Start Honeypot
+authbind --deep ./bin/cowrie start
+
+# Configure Cowrie SSH to listen on port 2222
+nano ~/cowrie/etc/cowrie.cfg
+# listen_endpoints = tcp:2222:interface=0.0.0.0
+
+# Reroute Port 22 to Cowrie (NAT)
+sudo iptables -t nat -A PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 2222
 ```
 
 ## 🎯 CTF Privilege Escalation Setup
