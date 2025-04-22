@@ -9,6 +9,21 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 - Learn pivoting and lateral movement within cloud environments
 - Deploy and interact with honeypots (e.g., Cowrie)
 
+## ⚙️ Prerequisites
+
+- AWS Account with permissions to create VPC, EC2, Security Groups, Route Tables
+- Basic knowledge of:
+  - Linux networking
+  - AWS EC2 and networking
+  - Penetration testing concepts
+- Recommended Tools on Attacker Box (Kali):
+  - netcat
+  - nmap
+  - hydra
+  - chisel
+  - proxychains
+  - linPEAS
+
 ## 📚 Table of Contents
 1. [Network Architecture](#-network-architecture)
 2. [Routing](#-routing)
@@ -257,6 +272,23 @@ nmap -sS -sV -T4 10.0.3.129
   - 22, 2222 → Cowrie honeypot
   - 22222 → Real SSH
   - 3306 → MySQL
+
+## 📢 Notes
+
+⚠️ **Note:**
+
+- MySQL on the internal server is intentionally left open to the 10.0.2.0/24 subnet with minimal protection for training purposes only. Do not expose similar configurations in production environments.
+- Vulnerabilities like world-writable SUID binaries, cronjobs, and SUID vim were **intentionally added to the DVWA server** to mimic CTF-style challenges.
+
+
+## 🧾 License
+
+This project is for educational purposes only. Use responsibly.
+
+## 👤 Author
+
+- Andrew Oppong-Asante
+- GitHub: [Andrew-Opp](https://github.com/Andrew-Opp)
 
 ---
 
