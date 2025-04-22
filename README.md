@@ -8,6 +8,15 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 - Learn pivoting and lateral movement within cloud environments
 - Deploy and interact with honeypots (e.g., Cowrie)
 
+## 🧠 Learning Outcomes
+
+- Understand subnet isolation and routing in AWS
+- Gain root through SUID + cron-based privilege escalation
+- Perform internal recon from a compromised host
+- Identify and bypass honeypot traps (e.g., Cowrie)
+- Practice SSH tunneling and SOCKS proxying
+
+
 ## ⚙️ Prerequisites
 
 - AWS Account with permissions to create VPC, EC2, Security Groups, Route Tables
@@ -32,6 +41,7 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 6. [Internal Server Configuration](#-internal-server-configuration)
 7. [CTF Privilege Escalation Setup](#-ctf-privilege-escalation-setup)
 8. [Next Steps: Attacking](#-next-steps-attacking)
+9. [Common Pitfalls](#-common-pitfalls)
 
 ## 📱 Network Architecture
 
@@ -54,6 +64,8 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
   - Route: `0.0.0.0/0` → Internet Gateway (`pentest-lab-igw`)
 - **private-route-table** (for internal-server):
   - No route to Internet (air-gapped after setup)
+
+> ⚠️ **Note:** A temporary NAT Gateway was configured during the internal-server setup to allow package installation. It was removed after the setup to simulate an isolated network environment.
 
 ## 🔐 Security Groups
 
@@ -291,13 +303,14 @@ nmap -sS -sV -T4 10.0.3.129
 
 > ✅ With root access on DVWA and confirmed access to internal services, the next stage is **pivoting** into the private subnet using SSH tunneling or SOCKS proxying.
 
-## 📢 Notes
+## 🧨 Common Pitfalls
 
-⚠️ **Note:**
-
-- MySQL on the internal server is intentionally left open to the 10.0.2.0/24 subnet with minimal protection for training purposes only. Do not expose similar configurations in production environments.
-- Vulnerabilities like world-writable SUID binaries, cronjobs, and SUID vim were **intentionally added to the DVWA server** to mimic CTF-style challenges.
-
+- Forgetting to update DVWA config with internal DB IP (`$_DVWA['db_server']`)
+- Running scripts without confirming file permissions (chmod +x)
+- Leaving NAT Gateway active on private subnets
+- Not allowing ICMP traffic between subnets for connectivity checks
+- Misconfigured proxychains or chisel causing failed pivot attempts
+- Not openning port in the Security Group 
 
 ## 🧾 License
 
@@ -310,3 +323,6 @@ This project is for educational purposes only. Use responsibly.
 
 ---
 
+![Status: In Progress](https://img.shields.io/badge/status-in--progress-yellow)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
+![Built With: AWS](https://img.shields.io/badge/built%20with-AWS-orange.svg)
