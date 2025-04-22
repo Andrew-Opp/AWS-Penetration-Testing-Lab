@@ -33,15 +33,17 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
   - linPEAS
 
 ## 📚 Table of Contents
-1. [Network Architecture](#-network-architecture)
-2. [Routing](#-routing)
-3. [Security Groups](#-security-groups)
-4. [Lab Machines Overview](#-lab-machines-overview)
-5. [DVWA Server Configuration](#-dvwa-server-configuration)
-6. [Internal Server Configuration](#-internal-server-configuration)
-7. [CTF Privilege Escalation Setup](#-ctf-privilege-escalation-setup)
-8. [Next Steps: Attacking](#-next-steps-attacking)
-9. [Common Pitfalls](#-common-pitfalls)
+1. [Network Architecture](#network-architecture)
+2. [Routing](#routing)
+3. [Security Groups](#security-groups)
+4. [Lab Machines Overview](#lab-machines-overview)
+5. [DVWA Server Configuration](#dvwa-server-configuration)
+6. [Internal Server Configuration](#internal-server-configuration)
+7. [CTF Privilege Escalation Setup](#ctf-privilege-escalation-setup)
+8. [Attacking the Lab](#attacking-the-lab)
+9. [Common Pitfalls](#common-pitfalls)
+10. [License](#license)
+11. [Author](#author)
 
 ## 📱 Network Architecture
 
@@ -107,6 +109,7 @@ Create a vulnerable cloud environment on AWS, simulate attacks using Kali Linux 
 | Kali Attacker     | kali             | 10.0.1.x        | Elastic IP assigned |
 | DVWA Target       | dvwa-server      | 10.0.2.x        | Elastic IP assigned |
 | Internal Server   | internal-server  | 10.0.3.x        | None               |
+
 
 ## 🛠️ DVWA Server Configuration
 
@@ -311,6 +314,9 @@ nmap -sS -sV -T4 10.0.3.129
 - Not allowing ICMP traffic between subnets for connectivity checks
 - Misconfigured proxychains or chisel causing failed pivot attempts
 - Not openning port in the Security Group 
+- Not moving SSH to a new port (e.g., 22222) when Cowrie is already listening on port 22/2222
+- Forgetting to open the new SSH port in the security group after the change
+
 
 ## 🧾 License
 
